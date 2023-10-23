@@ -1,26 +1,95 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, {useEffect, useState } from "react";
+import CryptoTable from "./components/Table/CryptoTable";
+import Header from "./components/Header/Header";
+import APIService from "./API/APIService";
+import { CryptoData } from "./types";
+import { Routes, Route, BrowserRouter} from "react-router-dom";
+import CryptoDetail from "./components/Details/CryptoDetail";
+import Paginator from "./components/Table/Paginator";
+import "./App.css"
 
-function App() {
+const App: React.FC = () => {
+  const [cryptos, setCryptos] = useState<CryptoData[]>([]);
+  const [portfolio, setPortfolio] = useState<CryptoData[]>([]);
+  const [purchased, setPurchased] = useState<CryptoData[]>([])
+  const [page, setPage] = useState(1)
+  
+  useEffect(() => {
+    const storedPortfolio = localStorage.getItem("portfolio");
+    if (storedPortfolio) {
+      const parsedPortfolio: CryptoData[] = JSON.parse(storedPortfolio);
+      setPortfolio(parsedPortfolio);
+    }
+    APIService.fetchData(page).then((response) => {
+      setCryptos(response);
+    })
+    }, [page]);
+
+  const handlePageChange = (page: number) => {
+    setPage(page);
+  };
+
+  const handleAddCoin = async (id: string) => {
+    let arr = [...portfolio];
+    let newEl = await APIService.fetchCoin(id)
+    if (newEl && !portfolio.find((x) => x.id === newEl!.id)){
+      newEl.number = 0
+      arr.push(newEl)
+      localStorage.setItem("portfolio", JSON.stringify(arr));
+    }
+    setPortfolio(arr)
+  }
+
+  const addCoin = (id: string) => {
+    portfolio.find((x) => x.id === id)!.number++
+    let arr = [...portfolio];
+    setPortfolio(arr)
+    localStorage.setItem("portfolio", JSON.stringify(arr));
+  }
+  const removeCoin = (id: string) => {
+    portfolio.find((x) => x.id === id)!.number--
+    let arr = [...portfolio];
+    setPortfolio(arr)
+    localStorage.setItem("portfolio", JSON.stringify(arr));
+  }
+
+  const handleDeleteCoin = (id: string) => {
+    const updatedPortfolio = [...portfolio];
+    const coinIndex = updatedPortfolio.findIndex((coin) => coin.id === id);
+    const coinInCryptos = cryptos.find((crypto) => crypto.id === id);
+    if (coinInCryptos) {
+      coinInCryptos.number = 0;
+    }
+    if (coinIndex !== -1) {
+      updatedPortfolio.splice(coinIndex, 1);
+      setPortfolio(updatedPortfolio);
+      localStorage.setItem("portfolio", JSON.stringify(updatedPortfolio));
+    }
+  };
+
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <BrowserRouter>
+        <h1>Crypto Currency</h1>
+        <Header cryptos={cryptos} portfolio={portfolio}
+        addCoin={addCoin}
+        removeCoin = {removeCoin} onRemoveCoin={handleDeleteCoin} />
+        <Routes>
+          <Route path="/" Component={() =>
+            <div>
+              <CryptoTable cryptos={cryptos} handleAddCoin={handleAddCoin} />
+              <Paginator
+                currentPage={page}
+                totalPages={10}
+                onPageChange={handlePageChange} />
+            </div>
+          } />
+          <Route path='/crypto/:id' Component={() =>
+            <CryptoDetail handleAddCoin={handleAddCoin}/>} />
+        </Routes>
+      </BrowserRouter>
     </div>
   );
-}
-
+};
 export default App;

@@ -1,0 +1,27 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #333;
+    color: white;
+    padding: 10px 20px;
+  }
+  
+  .crypto-info {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .crypto-item {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .portfolio-info {
+    cursor: pointer;
+  }
+  
+  .portfolio-info:hover {
+    text-decoration: underline;
+  }
+  
