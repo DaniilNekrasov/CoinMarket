@@ -3,7 +3,6 @@ import Modal from "./Modal";
 import { CryptoData } from "../../types";
 import "./Header.css"; 
 import APIService from "../../API/APIService";
-import { all } from "axios";
 
 interface HeaderProps {
   cryptos: CryptoData[];

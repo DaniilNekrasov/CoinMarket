@@ -1,19 +1,20 @@
-import React, {useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import CryptoTable from "./components/Table/CryptoTable";
 import Header from "./components/Header/Header";
 import APIService from "./API/APIService";
 import { CryptoData } from "./types";
-import { Routes, Route, BrowserRouter} from "react-router-dom";
+import { Routes, Route, BrowserRouter } from "react-router-dom";
 import CryptoDetail from "./components/Details/CryptoDetail";
 import Paginator from "./components/Table/Paginator";
 import "./App.css"
+import Modal from "./components/Header/Modal";
 
 const App: React.FC = () => {
   const [cryptos, setCryptos] = useState<CryptoData[]>([]);
   const [portfolio, setPortfolio] = useState<CryptoData[]>([]);
-  const [purchased, setPurchased] = useState<CryptoData[]>([])
   const [page, setPage] = useState(1)
-  
+  const [modalOpen, setModalOpen] = useState(false);
+
   useEffect(() => {
     const storedPortfolio = localStorage.getItem("portfolio");
     if (storedPortfolio) {
@@ -23,7 +24,7 @@ const App: React.FC = () => {
     APIService.fetchData(page).then((response) => {
       setCryptos(response);
     })
-    }, [page]);
+  }, [page]);
 
   const handlePageChange = (page: number) => {
     setPage(page);
@@ -32,11 +33,12 @@ const App: React.FC = () => {
   const handleAddCoin = async (id: string) => {
     let arr = [...portfolio];
     let newEl = await APIService.fetchCoin(id)
-    if (newEl && !portfolio.find((x) => x.id === newEl!.id)){
+    if (newEl && !portfolio.find((x) => x.id === newEl!.id)) {
       newEl.number = 0
       arr.push(newEl)
       localStorage.setItem("portfolio", JSON.stringify(arr));
     }
+    setModalOpen(true)
     setPortfolio(arr)
   }
 
@@ -67,14 +69,18 @@ const App: React.FC = () => {
     }
   };
 
+  const toggleModal = () => {
+    if(portfolio.length)
+    setModalOpen(!modalOpen);
+  };
 
   return (
     <div className="App">
       <BrowserRouter>
         <h1>Crypto Currency</h1>
         <Header cryptos={cryptos} portfolio={portfolio}
-        addCoin={addCoin}
-        removeCoin = {removeCoin} onRemoveCoin={handleDeleteCoin} />
+          addCoin={addCoin}
+          removeCoin={removeCoin} onRemoveCoin={handleDeleteCoin} />
         <Routes>
           <Route path="/" Component={() =>
             <div>
@@ -86,8 +92,16 @@ const App: React.FC = () => {
             </div>
           } />
           <Route path='/crypto/:id' Component={() =>
-            <CryptoDetail handleAddCoin={handleAddCoin}/>} />
+            <CryptoDetail handleAddCoin={handleAddCoin} />} />
         </Routes>
+        {modalOpen && portfolio.length > 0 && (
+            <Modal
+              portfolio={portfolio}
+              onRemoveCoin={handleDeleteCoin}
+              onClose={toggleModal}
+              addCoin={addCoin}
+              removeCoin={removeCoin}
+            />)}
       </BrowserRouter>
     </div>
   );
